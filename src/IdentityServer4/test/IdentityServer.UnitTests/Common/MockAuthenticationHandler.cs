@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 
@@ -6,11 +7,18 @@ namespace IdentityServer.UnitTests.Common
 {
     internal class MockAuthenticationHandler : IAuthenticationHandler
     {
+        public MockAuthenticationHandler()
+        {
+            GetResultFunc = () => Task.FromResult(Result);
+        }
+
         public AuthenticateResult Result { get; set; } = AuthenticateResult.NoResult();
+
+        public Func<Task<AuthenticateResult>> GetResultFunc { get; set; }
 
         public Task<AuthenticateResult> AuthenticateAsync()
         {
-            return Task.FromResult(Result);
+            return GetResultFunc();
         }
 
         public Task ChallengeAsync(AuthenticationProperties properties)

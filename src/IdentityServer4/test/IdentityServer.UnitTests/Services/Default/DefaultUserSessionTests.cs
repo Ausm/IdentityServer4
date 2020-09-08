@@ -1,4 +1,4 @@
-﻿// Copyright (c) Brock Allen & Dominick Baier. All rights reserved.
+// Copyright (c) Brock Allen & Dominick Baier. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
 
@@ -169,6 +169,30 @@ namespace IdentityServer.UnitTests.Services.Default
             sid.Should().Be("999");
         }
 
+        [Fact]
+        public async Task Authenticate_when_AuthenticationHandlerProvider_calls_itself_should_do_nothing_the_second_time()
+        {
+            var authenticationHandlerStackCount = 0;
+
+            _props.SetSessionId("999");
+            _mockAuthenticationHandler.Result = AuthenticateResult.Success(new AuthenticationTicket(_user, _props, "scheme"));
+            _mockAuthenticationHandler.GetResultFunc = async () => {
+                try
+                {
+                    authenticationHandlerStackCount++.Should().BeLessThan(2, "this would cause a StackOverflowException");
+                    await _subject.GetClientListAsync();
+                    return _mockAuthenticationHandler.Result;
+                }
+                finally
+                {
+                    authenticationHandlerStackCount--;
+                }
+            };
+
+            var sid = await _subject.GetSessionIdAsync();
+            sid.Should().Be("999");
+        }
+        
         [Fact]
         public async Task GetCurrentSessionIdAsync_when_user_is_anonymous_should_return_null()
         {
